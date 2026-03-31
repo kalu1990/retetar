@@ -185,6 +185,8 @@ function EmptyState({ filter }) {
 }
 
 export default function SuggestiiPage() {
+
+  const token = localStorage.getItem('auth_token') || ''
   usePageTracking('suggestii')
 
   const [suggestions, setSuggestions] = useState([])
@@ -219,7 +221,7 @@ export default function SuggestiiPage() {
     setScanning(true)
     setFeedback({ type: 'info', msg: `⏳ AI analizează ${fileName}...` })
     try {
-      const res = await fetch(`${API}/api/suggestions/scan`, {
+      const res = await fetch(`${API}/api/suggestions/scan?token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ file_path: fileName, focus: 'general' })

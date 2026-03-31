@@ -65,6 +65,7 @@ export default function AnalyticsPage({ auth }) {
   const [fbCount, setFbCount]   = useState(null)
   const [loading, setLoading]   = useState(true)
   const [lastRefresh, setLastRefresh] = useState(null)
+  const [onlineUsers, setOnlineUsers] = useState([])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -78,6 +79,8 @@ export default function AnalyticsPage({ auth }) {
         fetch(`${API}/api/dashboard/errors?token=${t}`).then(r => r.json()).catch(() => null),
       ])
       setStatus(s); setUsers(u); setContent(c); setActivity(a); setErrors(e)
+      const o = await fetch(`${API}/api/dashboard/online?token=${t}`).then(r => r.json()).catch(() => ({ online_users: [] }))
+      setOnlineUsers(o.online_users || [])
 
       // Firebase count
       try {
@@ -157,7 +160,10 @@ export default function AnalyticsPage({ auth }) {
               </div>
               {users.users.map((u, i) => (
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', padding: '14px 20px', borderBottom: i < users.users.length - 1 ? '1px solid rgba(253,246,236,0.04)' : 'none' }}>
-                  <span style={{ fontSize: 13, color: 'rgba(253,246,236,0.7)', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>{u.username}</span>
+                  <span style={{ fontSize: 13, color: 'rgba(253,246,236,0.7)', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>
+  <StatusDot online={onlineUsers.includes(u.username)} />
+  {u.username}
+</span>
                   <span style={{ fontSize: 10, color: u.role === 'creator' ? '#D4B87A' : 'rgba(253,246,236,0.4)', letterSpacing: '0.1em' }}>{u.role?.toUpperCase()}</span>
                   <span style={{ fontSize: 13, color: '#D4B87A', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>{u.recipe_count}</span>
                   <span style={{ fontSize: 10, color: 'rgba(253,246,236,0.3)' }}>{u.last_login ? new Date(u.last_login).toLocaleDateString('ro-RO') : '—'}</span>

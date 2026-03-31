@@ -32,6 +32,20 @@ export default function App() {
   const lastClickRef = useRef(0)
 
   useEffect(() => { initGlobalErrorTracking() }, [])
+  // Heartbeat la fiecare 30 secunde cat timp e logat
+  useEffect(() => {
+    if (!auth) return
+    const sendHeartbeat = () => {
+      fetch(`${API}/api/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_type: 'user_heartbeat', page: page, data: { username: auth.username } })
+      }).catch(() => {})
+    }
+    sendHeartbeat()
+    const interval = setInterval(sendHeartbeat, 30000)
+    return () => clearInterval(interval)
+  }, [auth, page])
 
   const toggleFullscreen = () => {
     const el = document.documentElement
@@ -116,6 +130,12 @@ export default function App() {
     } else {
       setAuth(data)
       setPage('hero')
+      // Trimite eveniment login
+      fetch(`${API}/api/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_type: 'user_login', page: 'login', data: { username: data.username } })
+      }).catch(() => {})
     }
   }
   const handleLogout = () => {
