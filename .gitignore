@@ -35,3 +35,14 @@ data/
 retetar_api.py
 
 retetar_api.py
+
+retetar_api.py
+aaa.py
+*.py
+*.db
+*.env
+
+retetar_api.py
+aaa.py
+*.py
+*.db

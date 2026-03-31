@@ -378,7 +378,7 @@ export default function SuggestiiRetetePage() {
       showToast(`${data.count} rețete noi generate ✦`)
       fetchSuggestions()
     } catch {
-      showToast('Eroare la generare. Verifică că Ollama rulează.', 'error')
+      showToast('Eroare la generare. Verifică conexiunea la AI.', 'error')
     } finally {
       setSearching(false)
     }

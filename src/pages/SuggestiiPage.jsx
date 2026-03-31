@@ -217,7 +217,7 @@ export default function SuggestiiPage() {
 
   const handleScan = async (fileName = 'retetar_api.py') => {
     setScanning(true)
-    setFeedback({ type: 'info', msg: `⏳ LLaMA analizează ${fileName}...` })
+    setFeedback({ type: 'info', msg: `⏳ AI analizează ${fileName}...` })
     try {
       const res = await fetch(`${API}/api/suggestions/scan`, {
         method: 'POST',

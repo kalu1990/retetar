@@ -44,7 +44,11 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "node_modules/electron-updater/**/*",
+      "node_modules/builder-util-runtime/**/*",
+      "node_modules/fs-extra/**/*",
+      "node_modules/lazy-val/**/*"
     ],
     "extraResources": [
       {
@@ -86,11 +90,17 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Bucataria Mea",
       "deleteAppDataOnUninstall": true,
-      "runAfterFinish": false
+      "runAfterFinish": false,
+      "include": "installer.nsh"
     },
     "asarUnpack": [
       "electron/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "node_modules/electron-updater/**/*",
+      "node_modules/builder-util-runtime/**/*",
+      "node_modules/fs-extra/**/*",
+      "node_modules/lazy-val/**/*",
+      "**/*"
     ]
   }
 }
