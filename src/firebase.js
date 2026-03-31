@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore'
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: "AIzaSyBIyPXyENV4Lsg-vhhEkumgoSy3dTiAX6E",
@@ -26,5 +26,81 @@ googleProvider.setCustomParameters({ prompt: 'select_account' })
 
 export const signInWithGoogle = () => signInWithPopup(auth, googleProvider)
 export const signOutFirebase = () => signOut(auth)
+
+// ─── INSPIRATIE FIRESTORE ────────────────────────────────────────────────────
+
+export async function loadInspiratieFirestore() {
+  try {
+    const q = query(collection(db, 'inspiratie'), orderBy('created_at', 'desc'))
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  } catch (e) {
+    console.error('[Firebase] Eroare incarcare inspiratie:', e)
+    return []
+  }
+}
+
+export async function uploadPozaFirebase(file, recipeId) {
+  try {
+    let fileToUpload = file
+    if (typeof file === 'string' && file.startsWith('data:')) {
+      const res = await fetch(file)
+      fileToUpload = await res.blob()
+    }
+    const ext = fileToUpload.type?.split('/')[1] || 'jpg'
+    const storageRef = ref(storage, `inspiratie/${recipeId}.${ext}`)
+    await uploadBytes(storageRef, fileToUpload)
+    const url = await getDownloadURL(storageRef)
+    return url
+  } catch (e) {
+    console.error('[Firebase] Eroare upload poza:', e)
+    return null
+  }
+}
+
+export async function publicaRetetaFirebase(reteta, imageFile = null) {
+  try {
+    const docId = reteta.id || `r_${Date.now()}`
+
+    let imageUrl = reteta.image_url || ''
+    if (imageFile) {
+      const uploaded = await uploadPozaFirebase(imageFile, docId)
+      if (uploaded) imageUrl = uploaded
+    }
+
+    const data = {
+      local_id: reteta.id || '',
+      name: reteta.name || '',
+      description: reteta.description || '',
+      ingredients: reteta.ingredients || '',
+      instructions: reteta.instructions || '',
+      prep_time: reteta.prep_time || 0,
+      cook_time: reteta.cook_time || 0,
+      servings: reteta.servings || 2,
+      calories: reteta.calories || 0,
+      category: reteta.category || 'toata_ziua',
+      difficulty: reteta.difficulty || 'mediu',
+      image_url: imageUrl,
+      created_by: reteta.created_by || '',
+      created_at: serverTimestamp(),
+    }
+
+    const docRef = await addDoc(collection(db, 'inspiratie'), data)
+    return { success: true, firebase_id: docRef.id }
+  } catch (e) {
+    console.error('[Firebase] Eroare publicare reteta:', e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function stergeRetetaFirebase(firebaseId) {
+  try {
+    await deleteDoc(doc(db, 'inspiratie', firebaseId))
+    return { success: true }
+  } catch (e) {
+    console.error('[Firebase] Eroare stergere reteta:', e)
+    return { success: false }
+  }
+}
 
 export default firebaseApp

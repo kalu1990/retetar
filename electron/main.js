@@ -15,6 +15,9 @@ const ROOT = isDev
   : path.join(process.resourcesPath, 'app')
 
 const PYTHON_DEV = path.join(ROOT, '.venv', 'Scripts', 'python.exe')
+const PYTHON_EMBED = isDev
+  ? null
+  : path.join(process.resourcesPath, 'python-embed', 'python.exe')
 const API_SCRIPT = path.join(ROOT, 'retetar_api.py')
 const ICON_PATH = path.join(__dirname, '..', 'assets', 'icon.ico')
 
@@ -290,13 +293,18 @@ function createTray() {
 }
 
 function getPythonExe() {
+  // 1. Python embedded din pachet (productie) — are toate pachetele instalate
+  if (!isDev && PYTHON_EMBED && fs.existsSync(PYTHON_EMBED)) {
+    console.log('[Backend] Folosesc python-embed:', PYTHON_EMBED)
+    return PYTHON_EMBED
+  }
+  // 2. .venv local (dev)
   if (fs.existsSync(PYTHON_DEV)) {
     return PYTHON_DEV
   }
-
+  // 3. Fallback - Python de sistem
   var localApp = process.env.LOCALAPPDATA || ''
   var candidates = []
-
   if (localApp) {
     candidates.push(localApp + '\\Programs\\Python\\Python313\\python.exe')
     candidates.push(localApp + '\\Programs\\Python\\Python312\\python.exe')
@@ -305,17 +313,13 @@ function getPythonExe() {
   }
   candidates.push('C:\\Python313\\python.exe')
   candidates.push('C:\\Python312\\python.exe')
-  candidates.push('C:\\Python311\\python.exe')
-  candidates.push('C:\\Python310\\python.exe')
-
   for (var i = 0; i < candidates.length; i++) {
     if (fs.existsSync(candidates[i])) {
-      console.log('[Backend] Python gasit la:', candidates[i])
+      console.log('[Backend] Python sistem gasit la:', candidates[i])
       return candidates[i]
     }
   }
-
-  console.log('[Backend] Folosesc python din PATH')
+  console.log('[Backend] Fallback python din PATH')
   return 'python'
 }
 

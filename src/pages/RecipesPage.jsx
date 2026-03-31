@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { usePageTracking } from '../hooks/useTelemetry'
+import { publicaRetetaFirebase } from '../firebase'
 
 const API = 'http://localhost:8000'
 const CATEGORIES = [['mic_dejun','Mic dejun'],['pranz','Prânz'],['cina','Cină'],['toata_ziua','Toată ziua']]
@@ -386,7 +387,20 @@ function RecipeModal({ r, auth, onClose, onDelete }) {
       }
 
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      if (res.ok) onClose(true)
+      if (res.ok) {
+        // Daca e publica, o publicam si in Firebase Inspiratie
+        if (payload.is_public === 1 || payload.is_public === true) {
+          const resData = await res.clone().json().catch(() => ({}))
+          const finalId = form.id || resData?.id || ''
+          // Trimite poza (base64 sau URL) catre Firebase Storage
+          const imageToUpload = imagePreview && imagePreview.startsWith('data:') ? imagePreview : null
+          await publicaRetetaFirebase(
+            { ...payload, id: finalId, image_url: imagePreview || payload.image_url || '' },
+            imageToUpload
+          ).catch(() => {})
+        }
+        onClose(true)
+      }
     } catch(e) { console.error(e) }
     setSaving(false)
   }

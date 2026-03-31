@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
 /* ── CONTRAST PANEL ── */
 function ContrastPanel({ onClose }) {
@@ -200,6 +201,7 @@ export default function Navbar({ activePage, onNavigate, auth, onLogout }) {
   const [appVersion, setAppVersion]     = useState('')
   const dropRef = useRef(null)
   const isCreator = auth?.role === 'creator'
+  const isOnline = useOnlineStatus()
 
   useEffect(() => {
     if (window.electronAPI?.appVersion) {
@@ -263,6 +265,22 @@ export default function Navbar({ activePage, onNavigate, auth, onLogout }) {
             </span>
           )}
         </div>
+
+        {/* Indicator offline */}
+        {!isOnline && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '4px 14px', borderRadius: 99,
+            background: 'rgba(196,120,138,0.12)',
+            border: '1px solid rgba(196,120,138,0.25)',
+            color: '#C4788A',
+            fontFamily: 'Jost, sans-serif',
+            fontSize: 9, letterSpacing: '0.18em',
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C4788A', display: 'inline-block' }}/>
+            OFFLINE
+          </div>
+        )}
 
         {/* Links */}
         <div className="flex gap-[24px] items-center">

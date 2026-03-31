@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePageTracking } from '../hooks/useTelemetry'
+import { loadInspiratieFirestore } from '../firebase'
 
 const API = 'http://localhost:8000'
 function formatTime(min) {
@@ -38,6 +39,15 @@ export default function HeroPage({ auth, onNavigate, activeFilters, onToggleFilt
   useEffect(() => { load(); loadFav() }, [])
 
   const load = async () => {
+    try {
+      // Incarca din Firebase (vizibil pentru toti utilizatorii)
+      const fbRecipes = await loadInspiratieFirestore()
+      if (fbRecipes && fbRecipes.length > 0) {
+        setRecipes(fbRecipes)
+        return
+      }
+    } catch {}
+    // Fallback la API local daca Firebase nu e disponibil
     try {
       const d = await fetch(`${API}/api/recipes?public_only=1&token=${getToken()}`).then(r => r.json())
       setRecipes(Array.isArray(d) ? d : [])

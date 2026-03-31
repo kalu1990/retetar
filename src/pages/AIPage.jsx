@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePageTracking } from '../hooks/useTelemetry'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
 const API = 'http://localhost:8000'
 const SESSION_ID = 'user-alexa-main'
@@ -7,6 +8,7 @@ function getToken() { return localStorage.getItem('auth_token') || '' }
 
 export default function AIPage({ auth }) {
   usePageTracking('ai')
+  const isOnline = useOnlineStatus()
 
   const [msgs, setMsgs] = useState([
     { role: 'ai', text: 'Bună dragă ✨ Sunt Chef AI-ul tău personal. Știu ce ai în frigider și îmi amintesc preferințele tale. Cu ce te pot ajuta azi?' }
@@ -126,8 +128,28 @@ export default function AIPage({ auth }) {
   const isCreator = auth?.role === 'creator'
   const hasConversation = msgs.length > 1
 
+  // Banner offline
+  const OfflineBanner = () => (
+    <div style={{
+      position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 100, display: 'flex', alignItems: 'center', gap: 10,
+      padding: '10px 24px', borderRadius: 99,
+      background: 'rgba(196,120,138,0.15)',
+      border: '1px solid rgba(196,120,138,0.3)',
+      backdropFilter: 'blur(20px)',
+      color: '#C4788A', fontFamily: 'Jost, sans-serif',
+      fontSize: 11, letterSpacing: '0.15em',
+      boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+      animation: 'fadeUp 0.4s ease-out both',
+    }}>
+      <span style={{ fontSize: 14 }}>⚡</span>
+      FĂRĂ CONEXIUNE LA INTERNET — AI INDISPONIBIL
+    </div>
+  )
+
   return (
     <div className="relative z-10 h-full flex flex-col overflow-hidden" style={{ fontFamily: 'Jost, sans-serif' }}>
+      {!isOnline && <OfflineBanner />}
 
       {/* ── FUNDAL CINEMATIC ── */}
       <div style={{ position: 'fixed', inset: 0, zIndex: -1 }}>
@@ -350,8 +372,8 @@ export default function AIPage({ auth }) {
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-            placeholder={loading ? 'Chef AI gândește...' : isCreator ? 'Comandă sau întrebare...' : 'Scrie-i Chef-ului AI...'}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && isOnline && send()}
+            placeholder={!isOnline ? 'AI indisponibil fără internet...' : loading ? 'Chef AI gândește...' : isCreator ? 'Comandă sau întrebare...' : 'Scrie-i Chef-ului AI...'}
             style={{
               flex: 1, background: 'transparent', border: 'none', outline: 'none',
               color: 'rgba(253,246,236,0.88)', fontFamily: 'Jost, sans-serif',
@@ -368,7 +390,7 @@ export default function AIPage({ auth }) {
               boxShadow: '0 0 24px rgba(196,120,138,0.5)',
             }}>■</button>
           ) : (
-            <button onClick={send} disabled={loading || !input.trim()} data-cursor style={{
+            <button onClick={send} disabled={loading || !input.trim() || !isOnline} data-cursor style={{
               width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
               background: input.trim() ? 'linear-gradient(135deg, #D4B87A, #8B6914)' : 'rgba(212,184,122,0.15)',
               border: 'none', cursor: 'none',
@@ -380,7 +402,7 @@ export default function AIPage({ auth }) {
           )}
         </div>
         <div style={{ textAlign: 'center', marginTop: 10, fontSize: 9, letterSpacing: '0.18em', color: 'rgba(253,246,236,0.15)', textTransform: 'uppercase' }}>
-          {isCreator ? '👑 Mod Creator activ' : 'Enter pentru a trimite · Chef AI cunoaște cămara ta'}
+          {!isOnline ? '⚡ Fără internet — AI indisponibil momentan' : isCreator ? '👑 Mod Creator activ' : 'Enter pentru a trimite · Chef AI cunoaște cămara ta'}
         </div>
       </div>
 

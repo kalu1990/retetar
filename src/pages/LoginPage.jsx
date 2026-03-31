@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 const API = 'http://localhost:8000'
 
 export default function LoginPage({ onLogin }) {
@@ -9,6 +10,7 @@ export default function LoginPage({ onLogin }) {
   const [error, setError]           = useState('')
   const [loading, setLoading]       = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const isOnline = useOnlineStatus()
 
   // ── Login cu Google ──────────────────────────────────────────────
   const handleGoogleLogin = async () => {
@@ -158,7 +160,7 @@ export default function LoginPage({ onLogin }) {
         </div>
 
         {/* ── Buton Google ─────────────────────────────────────────── */}
-        <button
+        {isOnline && <button
           onClick={handleGoogleLogin}
           disabled={googleLoading || loading}
           style={{
@@ -193,6 +195,7 @@ export default function LoginPage({ onLogin }) {
           </span>
         </button>
 
+        }
         {/* ── Separator ────────────────────────────────────────────── */}
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
           <div style={{ flex:1, height:1, background:'rgba(253,246,236,0.08)' }}/>

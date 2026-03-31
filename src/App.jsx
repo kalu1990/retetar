@@ -72,11 +72,34 @@ export default function App() {
     if (token && savedUser) {
       try {
         const user = JSON.parse(savedUser)
-        fetch(`${API}/api/auth/me?token=${token}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(data => { if (data) setAuth({ token, ...data }); else handleLogout() })
-          .catch(() => setAuth({ token, ...user }))
-          .finally(() => setAuthLoading(false))
+        // Incearca sa verifice sesiunea cu retry - backend-ul poate porni mai lent
+        const tryAuth = (retries = 3) => {
+          fetch(`${API}/api/auth/me?token=${token}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              if (data) {
+                // Sesiune valida - logheaza cu datele de pe server
+                setAuth({ token, ...data })
+                localStorage.setItem('auth_user', JSON.stringify({ username: data.username, role: data.role }))
+              } else if (retries > 0) {
+                // Incearca din nou dupa 1 secunda
+                setTimeout(() => tryAuth(retries - 1), 1000)
+              } else {
+                // Dupa toate reincercarile, foloseste datele salvate local
+                setAuth({ token, ...user })
+              }
+            })
+            .catch(() => {
+              if (retries > 0) {
+                setTimeout(() => tryAuth(retries - 1), 1000)
+              } else {
+                // Backend indisponibil - foloseste datele salvate local
+                setAuth({ token, ...user })
+              }
+            })
+            .finally(() => { if (retries === 3 || retries === 0) setAuthLoading(false) })
+        }
+        tryAuth()
       } catch { setAuthLoading(false) }
     } else { setAuthLoading(false) }
   }, [])
