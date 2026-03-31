@@ -15,6 +15,7 @@ import SuggestiiRetetePage from './pages/SuggestiiRetetePage'
 import ProfilePage        from './pages/ProfilePage'
 
 import MagazinPage         from './pages/MagazinPage'
+import { initGlobalErrorTracking } from './hooks/useTelemetry'
 
 const PAGES = { hero: HeroPage, retete: RecipesPage, planner: PlannerPage, ai: AIPage, analytics: AnalyticsPage, pantry: PantryPage, magazin: MagazinPage, suggestii: SuggestiiPage, suggestii_retete: SuggestiiRetetePage, profil: ProfilePage }
 const API = 'http://localhost:8000'
@@ -24,9 +25,13 @@ export default function App() {
   const [auth, setAuth] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState(new Set(['mic_dejun','pranz','cina','toata_ziua']))
+  const [showPinSetup, setShowPinSetup] = useState(false)
+  const [pendingAuth, setPendingAuth]   = useState(null)
   const appRef = useRef(null)
   useCursor(); useCursorExpand(appRef)
   const lastClickRef = useRef(0)
+
+  useEffect(() => { initGlobalErrorTracking() }, [])
 
   const toggleFullscreen = () => {
     const el = document.documentElement
@@ -104,7 +109,15 @@ export default function App() {
     } else { setAuthLoading(false) }
   }, [])
 
-  const handleLogin = (data) => { setAuth(data); setPage('hero') }
+  const handleLogin = (data) => {
+    if (data.has_pin === false) {
+      setPendingAuth(data)
+      setShowPinSetup(true)
+    } else {
+      setAuth(data)
+      setPage('hero')
+    }
+  }
   const handleLogout = () => {
     const token = localStorage.getItem('auth_token')
     if (token) fetch(`${API}/api/auth/logout?token=${token}`, { method: 'POST' }).catch(() => {})
@@ -125,6 +138,15 @@ export default function App() {
       <div style={{width:48,height:48,borderRadius:14,background:'linear-gradient(135deg,#D4B87A,#C9A96E)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>🍳</div>
     </div>
   )
+
+  if (showPinSetup && pendingAuth) return (
+    <LoginPage
+      onLogin={(data) => { setAuth(data); setPage('hero'); setShowPinSetup(false); setPendingAuth(null) }}
+      forcePinSetup={true}
+      pendingAuth={pendingAuth}
+    />
+  )
+
   if (!auth) return <LoginPage onLogin={handleLogin} />
 
   // Pagini accesibile doar creator-ului

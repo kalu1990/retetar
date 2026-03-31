@@ -1,26 +1,18 @@
-/**
- * useTelemetry.js
- * Urmărește comportamentul utilizatorului și trimite la backend.
- * AI-ul învață din aceste evenimente ce îți place, ce faci des, ce eviți.
- */
-
 import { useEffect, useRef, useCallback } from 'react'
+import { sendTelemetryEvent, sendErrorToFirebase } from '../firebase'
 
 const API = 'http://localhost:8000'
 const SESSION_ID = 'user-alexa-main'
-const FLUSH_INTERVAL = 15000  // trimite la fiecare 15 secunde
-const FLUSH_BATCH_SIZE = 20   // sau când se adună 20 evenimente
+const FLUSH_INTERVAL = 15000
+const FLUSH_BATCH_SIZE = 20
 
 let globalBuffer = []
 let flushTimer = null
 
-// Trimite evenimentele la backend
 async function flushEvents() {
   if (globalBuffer.length === 0) return
-
   const batch = [...globalBuffer]
   globalBuffer = []
-
   try {
     await fetch(`${API}/api/events`, {
       method: 'POST',
@@ -28,55 +20,43 @@ async function flushEvents() {
       body: JSON.stringify({ events: batch, session_id: SESSION_ID }),
     })
   } catch (e) {
-    // Dacă backend-ul nu e disponibil, nu bloca UI-ul
     console.debug('Telemetry flush failed (backend offline?):', e.message)
   }
 }
 
-// Pornește timer-ul de flush dacă nu e pornit
 function ensureFlushTimer() {
   if (!flushTimer) {
     flushTimer = setInterval(flushEvents, FLUSH_INTERVAL)
   }
 }
 
-// Adaugă un eveniment în buffer
 function bufferEvent(event) {
-  globalBuffer.push({
-    ...event,
-    timestamp: Date.now(),
-    session_id: SESSION_ID,
-  })
-
-  if (globalBuffer.length >= FLUSH_BATCH_SIZE) {
-    flushEvents()
-  }
+  globalBuffer.push({ ...event, timestamp: Date.now(), session_id: SESSION_ID })
+  if (globalBuffer.length >= FLUSH_BATCH_SIZE) flushEvents()
 }
 
 // ─── HOOK PRINCIPAL ───────────────────────────────────────────────────────────
 export function useTelemetry() {
   useEffect(() => {
     ensureFlushTimer()
-
-    // Flush la închiderea paginii
     const handleUnload = () => flushEvents()
     window.addEventListener('beforeunload', handleUnload)
-
-    return () => {
-      window.removeEventListener('beforeunload', handleUnload)
-    }
+    return () => window.removeEventListener('beforeunload', handleUnload)
   }, [])
 
-  // Funcție de tracking pe care o poți chema din orice componentă
   const track = useCallback((eventType, action, target = '', metadata = {}) => {
+    // trimite local
     bufferEvent({ event_type: eventType, action, target, metadata })
+    // trimite si in Firebase (doar navigare si actiuni importante, nu fiecare click)
+    if (eventType === 'navigation' || eventType === 'error') {
+      sendTelemetryEvent(eventType, action, target, metadata).catch(() => {})
+    }
   }, [])
 
   return { track }
 }
 
 // ─── HOOK PENTRU PAGINI ───────────────────────────────────────────────────────
-// Folosește-l în fiecare pagină pentru a urmări timpul petrecut
 export function usePageTracking(pageName) {
   const { track } = useTelemetry()
   const startTime = useRef(Date.now())
@@ -84,7 +64,6 @@ export function usePageTracking(pageName) {
   useEffect(() => {
     startTime.current = Date.now()
     track('navigation', 'page_enter', pageName)
-
     return () => {
       const duration = Date.now() - startTime.current
       track('navigation', 'page_exit', pageName, { duration_ms: duration })
@@ -95,13 +74,29 @@ export function usePageTracking(pageName) {
 }
 
 // ─── HOOK PENTRU BUTOANE ──────────────────────────────────────────────────────
-// Simplu — apelează când apeși un buton important
 export function useButtonTrack() {
   const { track } = useTelemetry()
-
   const trackClick = useCallback((buttonName, metadata = {}) => {
     track('interaction', 'button_click', buttonName, metadata)
   }, [track])
-
   return { trackClick }
+}
+
+// ─── ERORI GLOBALE ────────────────────────────────────────────────────────────
+export function initGlobalErrorTracking() {
+  window.addEventListener('error', (e) => {
+    sendErrorToFirebase(e.message, 'js_error', {
+      filename: e.filename,
+      lineno: e.lineno,
+      colno: e.colno,
+    }).catch(() => {})
+  })
+
+  window.addEventListener('unhandledrejection', (e) => {
+    sendErrorToFirebase(
+      e.reason?.message || String(e.reason),
+      'promise_rejection',
+      {}
+    ).catch(() => {})
+  })
 }

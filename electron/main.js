@@ -347,8 +347,8 @@ function startBackend() {
       cwd: path.dirname(scriptPath),
       env: Object.assign({}, process.env, {
         PYTHONUNBUFFERED: '1',
-        CREATOR_PIN: process.env.CREATOR_PIN || 'admin123',
-        CREATOR_USER: process.env.CREATOR_USER || 'madalin',
+        CREATOR_PIN: process.env.CREATOR_PIN || '1955',
+        CREATOR_USER: process.env.CREATOR_USER || 'margineanumadalin',
       }),
       windowsHide: true,
       shell: useShell,

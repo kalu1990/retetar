@@ -103,4 +103,63 @@ export async function stergeRetetaFirebase(firebaseId) {
   }
 }
 
+// ─── TELEMETRIE TEHNICĂ ──────────────────────────────────────────────────────
+
+export async function sendTelemetryEvent(eventType, action, target = '', metadata = {}) {
+  try {
+    await addDoc(collection(db, 'telemetrie'), {
+      event_type: eventType,
+      action,
+      target,
+      metadata,
+      app_version: window.electronAPI?.getVersion?.() || 'web',
+      timestamp: serverTimestamp(),
+      user_agent: navigator.userAgent,
+    })
+  } catch (e) {
+    // silentios - telemetria nu blocheaza UI
+  }
+}
+
+export async function sendErrorToFirebase(message, source = 'frontend', extra = {}) {
+  try {
+    await addDoc(collection(db, 'erori'), {
+      message,
+      source,
+      extra,
+      app_version: window.electronAPI?.getVersion?.() || 'web',
+      timestamp: serverTimestamp(),
+      user_agent: navigator.userAgent,
+    })
+  } catch (e) {
+    // silentios
+  }
+}
+
+export async function loadTelemetrieFirestore(limitCount = 100) {
+  try {
+    const { limit } = await import('firebase/firestore')
+    const q = query(collection(db, 'telemetrie'), orderBy('timestamp', 'desc'), limit(limitCount))
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  } catch (e) {
+    console.error('[Firebase] Eroare incarcare telemetrie:', e)
+    return []
+  }
+}
+
+export async function loadEroriFirestore(limitCount = 50) {
+  try {
+    const { limit } = await import('firebase/firestore')
+    const q = query(collection(db, 'erori'), orderBy('timestamp', 'desc'), limit(limitCount))
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  } catch (e) {
+    console.error('[Firebase] Eroare incarcare erori:', e)
+    return []
+  }
+}
+
+
+
 export default firebaseApp
