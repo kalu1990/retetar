@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts already loaded in index.html ── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* cursor: none — gestionat din JS */
+  background: #080503;
+  font-family: 'Jost', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── CURSOR: gestionat din useCursor.js direct pe body ── */
+
+/* ── GRAIN ── */
+#grain {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 0.45s steps(2) infinite;
+}
+
+/* ── SCAN LINE ── */
+#scan {
+  position: fixed;
+  left: 0; right: 0;
+  height: 1px;
+  z-index: 6;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(201,169,110,0.06), transparent);
+  animation: scan 13s linear infinite;
+}
+
+/* ── SLIDE BG ── */
+.slide-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.8s ease;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+.slide-bg.active { opacity: 1; }
+.slide-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 10%, rgba(4,2,1,0.5) 60%, rgba(4,2,1,0.94) 100%),
+    linear-gradient(to right, rgba(4,2,1,0.85) 0%, rgba(4,2,1,0.3) 38%, transparent 55%, rgba(4,2,1,0.4) 100%),
+    linear-gradient(to bottom, rgba(4,2,1,0.6) 0%, transparent 18%, transparent 68%, rgba(4,2,1,0.92) 100%);
+}
+
+/* ── BIG TITLE GRADIENT ── */
+.title-gradient {
+  background: linear-gradient(155deg, #F0DC9A 0%, #D4B87A 30%, #C9A96E 55%, #B8925A 75%, #E8D5A3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 50px rgba(201,169,110,0.32));
+}
+
+/* ── GOLD BTN SHIMMER ── */
+.btn-gold-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-gold-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%);
+  transform: translateX(-200%);
+  transition: transform 0.5s ease;
+}
+.btn-gold-shimmer:hover::after { transform: translateX(200%); }
+
+/* ── STAGGER DELAYS ── */
+.delay-500  { animation-delay: 0.5s; }
+.delay-720  { animation-delay: 0.72s; }
+.delay-900  { animation-delay: 0.9s; }
+.delay-1050 { animation-delay: 1.05s; }
+.delay-1200 { animation-delay: 1.2s; }
+.delay-1500 { animation-delay: 1.5s; }
+.delay-1700 { animation-delay: 1.7s; }
+.delay-1900 { animation-delay: 1.9s; }
+
+/* start hidden, animate to visible */
+.anim-hidden { opacity: 0; }
+
+/* ── SCROLLBAR ── */
+* { scrollbar-width: thin; scrollbar-color: rgba(201,169,110,0.22) transparent; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track {
+  background: rgba(8,5,3,0.6);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(201,169,110,0.22);
+  border-radius: 99px;
+  border: 1px solid rgba(201,169,110,0.08);
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(201,169,110,0.45); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* Scrollbar pe html (zoom browser) */
+html::-webkit-scrollbar { width: 8px; }
+html::-webkit-scrollbar-track { background: #080503; }
+html::-webkit-scrollbar-thumb {
+  background: rgba(201,169,110,0.25);
+  border-radius: 99px;
+  border: 2px solid #080503;
+}
+html::-webkit-scrollbar-thumb:hover { background: rgba(201,169,110,0.5); }
+
+/* ── RE-ENABLE SELECTION PE INPUTURI ── */
+input, textarea, [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

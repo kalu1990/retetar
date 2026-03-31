@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Bucătăria Mea</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 480px; height: 300px;
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+    -webkit-app-region: drag;
+    overflow: hidden;
+  }
+  .card {
+    width: 100%; height: 100%;
+    background: linear-gradient(160deg, #1A0F06 0%, #0C0806 60%, #080401 100%);
+    border: 1px solid rgba(212,184,122,0.25);
+    border-radius: 20px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0;
+    box-shadow:
+      0 32px 80px rgba(0,0,0,0.8),
+      0 0 0 1px rgba(212,184,122,0.08),
+      inset 0 1px 0 rgba(212,184,122,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(212,184,122,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .orb {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #F0D898, #D4B87A 40%, #8B6914 80%);
+    box-shadow:
+      0 0 32px rgba(212,184,122,0.7),
+      0 0 64px rgba(212,184,122,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+    animation: orbPulse 2s ease-in-out infinite;
+  }
+  @keyframes orbPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 32px rgba(212,184,122,0.7), 0 0 64px rgba(212,184,122,0.3); }
+    50% { transform: scale(1.06); box-shadow: 0 0 48px rgba(212,184,122,0.9), 0 0 96px rgba(212,184,122,0.4); }
+  }
+
+  .title {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 32px;
+    font-weight: 300;
+    color: #D4B87A;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+    text-shadow: 0 0 40px rgba(212,184,122,0.3);
+  }
+  .title span { color: #FDF6EC; font-style: normal; }
+
+  .subtitle {
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    color: rgba(253,246,236,0.3);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  .progress-wrap {
+    width: 200px;
+    height: 1.5px;
+    background: rgba(253,246,236,0.07);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #8B6914, #D4B87A, #F0D898);
+    border-radius: 2px;
+    animation: load 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  @keyframes load {
+    0%   { width: 0%; }
+    30%  { width: 35%; }
+    60%  { width: 65%; }
+    85%  { width: 85%; }
+    100% { width: 95%; }
+  }
+
+  .status {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    color: rgba(212,184,122,0.45);
+    text-transform: uppercase;
+    animation: statusCycle 3s ease-in-out forwards;
+  }
+  @keyframes statusCycle {
+    0%, 30%  { content: 'SE PORNEȘTE...'; }
+    60%, 85% { opacity: 0.6; }
+    100%     { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="orb">✦</div>
+  <div class="title"><span>Bucătăria</span> Mea</div>
+  <div class="subtitle">Asistent culinar personal</div>
+  <div class="progress-wrap">
+    <div class="progress-bar"></div>
+  </div>
+  <div class="status" id="status">Se inițializează...</div>
+</div>
+<script>
+  const msgs = [
+    'Se pornește motorul AI...',
+    'Se pregătesc ingredientele...',
+    'Chef AI se trezește...',
+    'Aproape gata...',
+  ]
+  let i = 0
+  const el = document.getElementById('status')
+  setInterval(() => {
+    el.style.opacity = '0'
+    setTimeout(() => {
+      el.textContent = msgs[Math.min(i++, msgs.length - 1)]
+      el.style.opacity = '1'
+    }, 300)
+  }, 750)
+  el.style.transition = 'opacity 0.3s'
+</script>
+</body>
+</html>

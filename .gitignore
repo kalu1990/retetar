@@ -1,0 +1,33 @@
+node_modules/
+.env
+dist/
+dist-electron/
+__pycache__/
+
+python-embed/
+
+CONVORBIRE CU CLAUDE.txt
+
+key.txt
+
+*.txt
+
+CONVORBIRE CU CLAUDE.txt
+
+key.txt
+
+*.txt
+
+CONVORBIRE CU CLAUDE.txt
+
+key.txt
+
+*.txt
+
+primareteta/
+
+backend_dist/
+
+build/
+
+data/
