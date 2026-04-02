@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { usePageTracking } from '../hooks/useTelemetry'
-import { loadInspiratieFirestore } from '../firebase'
+import { loadInspiratieFirestore, loadPrezentaFirebase } from '../firebase'
 
 const API = 'http://localhost:8000'
 const getToken = () => localStorage.getItem('auth_token') || ''
@@ -65,7 +65,7 @@ export default function AnalyticsPage({ auth }) {
   const [fbCount, setFbCount]   = useState(null)
   const [loading, setLoading]   = useState(true)
   const [lastRefresh, setLastRefresh] = useState(null)
-  const [onlineUsers, setOnlineUsers] = useState([])
+  const [onlineUsers, setOnlineUsers] = useState({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -79,8 +79,28 @@ export default function AnalyticsPage({ auth }) {
         fetch(`${API}/api/dashboard/errors?token=${t}`).then(r => r.json()).catch(() => null),
       ])
       setStatus(s); setUsers(u); setContent(c); setActivity(a); setErrors(e)
-      const o = await fetch(`${API}/api/dashboard/online?token=${t}`).then(r => r.json()).catch(() => ({ online_users: [] }))
-      setOnlineUsers(o.online_users || [])
+      const o = await fetch(`${API}/api/dashboard/online?token=${t}`).then(r => r.json()).catch(() => ({ user_stats: {} }))
+       setOnlineUsers(o.user_stats || {})
+
+      // Prezenta Firebase - useri de la distanta
+      try {
+        const prezenta = await loadPrezentaFirebase()
+        const now = Date.now()
+        const stats = { ...(o.user_stats || {}) }
+        prezenta.forEach(p => {
+          const lastSeen = p.last_seen?.toDate?.()
+          if (!lastSeen) return
+          if (!stats[p.username]) {
+            stats[p.username] = { access_count: 1, last_seen: lastSeen.toISOString() }
+          } else {
+            const existing = new Date(stats[p.username].last_seen)
+            if (lastSeen > existing) {
+              stats[p.username].last_seen = lastSeen.toISOString()
+            }
+          }
+        })
+        setOnlineUsers(stats)
+      } catch {}
 
       // Firebase count
       try {
@@ -153,20 +173,22 @@ export default function AnalyticsPage({ auth }) {
           {/* Lista utilizatori */}
           {users?.users?.length > 0 && (
             <div style={{ background: 'rgba(253,246,236,0.02)', border: '1px solid rgba(201,169,110,0.1)', borderRadius: 16, overflow: 'hidden' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', padding: '12px 20px', borderBottom: '1px solid rgba(201,169,110,0.08)' }}>
-                {['UTILIZATOR', 'ROL', 'REȚETE', 'ULTIMA ACTIVITATE'].map(h => (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 80px 1fr', padding: '12px 20px', borderBottom: '1px solid rgba(201,169,110,0.08)' }}>
+                {['UTILIZATOR', 'ROL', 'REȚETE', 'ACCESĂRI', 'ULTIMA ACCESARE'].map(h => (
                   <span key={h} style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(253,246,236,0.2)' }}>{h}</span>
                 ))}
               </div>
               {users.users.map((u, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', padding: '14px 20px', borderBottom: i < users.users.length - 1 ? '1px solid rgba(253,246,236,0.04)' : 'none' }}>
-                  <span style={{ fontSize: 13, color: 'rgba(253,246,236,0.7)', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>
-  <StatusDot online={onlineUsers.includes(u.username)} />
-  {u.username}
-</span>
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 80px 1fr', padding: '14px 20px', borderBottom: i < users.users.length - 1 ? '1px solid rgba(253,246,236,0.04)' : 'none' }}>
+                  <span style={{ fontSize: 13, color: 'rgba(253,246,236,0.7)', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>{u.username}</span>
                   <span style={{ fontSize: 10, color: u.role === 'creator' ? '#D4B87A' : 'rgba(253,246,236,0.4)', letterSpacing: '0.1em' }}>{u.role?.toUpperCase()}</span>
                   <span style={{ fontSize: 13, color: '#D4B87A', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>{u.recipe_count}</span>
-                  <span style={{ fontSize: 10, color: 'rgba(253,246,236,0.3)' }}>{u.last_login ? new Date(u.last_login).toLocaleDateString('ro-RO') : '—'}</span>
+                  <span style={{ fontSize: 13, color: '#D4B87A', fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic' }}>{onlineUsers[u.username]?.access_count ?? '—'}</span>
+                  <span style={{ fontSize: 10, color: 'rgba(253,246,236,0.3)' }}>
+                    {onlineUsers[u.username]?.last_seen
+                      ? new Date(onlineUsers[u.username].last_seen).toLocaleString('ro-RO')
+                      : u.last_login ? new Date(u.last_login).toLocaleDateString('ro-RO') : '—'}
+                  </span>
                 </div>
               ))}
             </div>

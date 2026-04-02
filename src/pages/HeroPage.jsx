@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePageTracking } from '../hooks/useTelemetry'
-import { loadInspiratieFirestore } from '../firebase'
+import { loadInspiratieFirestore, stergeRetetaFirebase } from '../firebase'
 
 const API = 'http://localhost:8000'
 function formatTime(min) {
@@ -30,6 +30,16 @@ export default function HeroPage({ auth, onNavigate, activeFilters, onToggleFilt
   const [dir, setDir]                 = useState('next')
   const [transType, setTransType]     = useState('cortina')
   const [showRecipe, setShowRecipe]   = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const stergeRetetaCurenta = async () => {
+    if (!r?.id) return
+    if (!confirmDelete) { setConfirmDelete(true); setTimeout(() => setConfirmDelete(false), 3000); return }
+    await stergeRetetaFirebase(r.id)
+    setConfirmDelete(false)
+    const fresh = await loadInspiratieFirestore()
+    setRecipes(fresh)
+  }
 
   const lastTransRef                  = useRef('')
   const filteredRef                   = useRef([])
@@ -337,6 +347,23 @@ export default function HeroPage({ auth, onNavigate, activeFilters, onToggleFilt
           >
             SPRE REȚETĂ →
           </button>
+
+          {/* Buton ștergere — doar creator */}
+          {auth?.role === 'creator' && (
+            <button onClick={stergeRetetaCurenta} data-cursor style={{
+              padding: '10px 18px', borderRadius: 3, cursor: 'none',
+              background: confirmDelete ? 'rgba(180,40,40,0.65)' : 'rgba(180,40,40,0.18)',
+              border: `1px solid ${confirmDelete ? 'rgba(220,80,80,0.8)' : 'rgba(220,80,80,0.35)'}`,
+              color: confirmDelete ? '#FF9090' : 'rgba(220,100,100,0.6)',
+              fontFamily: 'Jost', fontSize: 9, fontWeight: 600, letterSpacing: '0.18em',
+              transition: 'all 0.2s', backdropFilter: 'blur(8px)',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,40,40,0.45)'; e.currentTarget.style.color = '#FF7070' }}
+              onMouseLeave={e => { e.currentTarget.style.background = confirmDelete ? 'rgba(180,40,40,0.65)' : 'rgba(180,40,40,0.18)'; e.currentTarget.style.color = confirmDelete ? '#FF9090' : 'rgba(220,100,100,0.6)' }}
+            >
+              {confirmDelete ? '✕ CONFIRMĂ ȘTERGEREA' : '✕ ȘTERGE'}
+            </button>
+          )}
         </div>
 
         {/* Detalii */}

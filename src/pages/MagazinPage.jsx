@@ -71,6 +71,7 @@ export default function MagazinPage({ auth, onNavigate }) {
         .shop-scroll::-webkit-scrollbar { width: 3px; }
         .shop-scroll::-webkit-scrollbar-track { background: transparent; }
         .shop-scroll::-webkit-scrollbar-thumb { background: rgba(212,184,122,0.15); border-radius: 99px; }
+        input::placeholder { color: rgba(255,255,255,0.75) !important; opacity: 1 !important; }
       `}</style>
 
       {/* FUNDAL */}
@@ -78,9 +79,9 @@ export default function MagazinPage({ auth, onNavigate }) {
         <img
           src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=1920&q=90&auto=format&fit=crop"
           alt=""
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.72) saturate(0.85)' }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.92) saturate(1.0)' }}
         />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(2,1,0,0.45) 0%, rgba(2,1,0,0.1) 18%, rgba(2,1,0,0.05) 50%, rgba(2,1,0,0.15) 100%)' }}/>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(2,1,0,0.25) 0%, rgba(2,1,0,0.05) 18%, rgba(2,1,0,0.0) 50%, rgba(2,1,0,0.08) 100%)' }}/>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 85% 85% at 50% 50%, transparent 40%, rgba(1,0,0,0.25) 100%)' }}/>
       </div>
 
@@ -99,7 +100,7 @@ export default function MagazinPage({ auth, onNavigate }) {
 
             {total > 0 ? (
               <div>
-                <div style={{ fontSize: 11, color: 'rgba(253,246,236,0.7)', letterSpacing: '0.14em', marginBottom: 10, textTransform: 'uppercase', textShadow: '0 1px 8px rgba(0,0,0,0.8)' }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,1)', letterSpacing: '0.14em', marginBottom: 10, textTransform: 'uppercase', textShadow: '0 0 8px rgba(255,255,255,0.4)' }}>
                   {done} din {total} produse cumpărate
                 </div>
                 <div style={{ width: 420, height: 2, background: 'rgba(253,246,236,0.07)', borderRadius: 2, overflow: 'hidden' }}>
@@ -107,7 +108,7 @@ export default function MagazinPage({ auth, onNavigate }) {
                 </div>
               </div>
             ) : (
-              <p style={{ fontSize: 11, color: 'rgba(253,246,236,0.22)', letterSpacing: '0.1em', fontWeight: 300 }}>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', letterSpacing: '0.1em', fontWeight: 300 }}>
                 Lista e goală ✦
               </p>
             )}
@@ -134,10 +135,10 @@ export default function MagazinPage({ auth, onNavigate }) {
 
         {/* PANEL GLASSMORPHISM */}
         <div style={{
-          background: 'rgba(253,246,236,0.08)', backdropFilter: 'blur(20px)',
+          background: 'rgba(8,5,2,0.62)', backdropFilter: 'blur(8px)',
           borderRadius: 28, padding: '36px 48px 40px',
-          border: '1px solid rgba(253,246,236,0.18)',
-          boxShadow: '0 8px 48px rgba(253,246,236,0.06), inset 0 1px 0 rgba(253,246,236,0.15)',
+          border: '1px solid rgba(212,184,122,0.15)',
+          boxShadow: '0 8px 48px rgba(0,0,0,0.5)',
         }}>
 
         {/* ADAUGĂ */}
@@ -152,7 +153,7 @@ export default function MagazinPage({ auth, onNavigate }) {
             style={{
               flex: 1, background: 'transparent', border: 'none',
               borderBottom: '1px solid rgba(212,184,122,0.22)',
-              color: 'rgba(253,246,236,0.9)', fontFamily: 'Cormorant Garamond, serif',
+              color: 'rgba(255,255,255,1)', fontFamily: 'Cormorant Garamond, serif',
               fontStyle: 'italic', fontSize: 26, padding: '10px 0', outline: 'none',
               caretColor: '#D4B87A',
             }}
@@ -174,7 +175,7 @@ export default function MagazinPage({ auth, onNavigate }) {
         {/* Header listă */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', marginBottom: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 8, letterSpacing: '0.28em', color: 'rgba(212,184,122,0.5)', textTransform: 'uppercase' }}>
+            <span style={{ fontFamily: 'Jost, sans-serif', fontSize: 8, letterSpacing: '0.28em', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase' }}>
               Lista de cumpărături
             </span>
             {pending.length > 0 && (
@@ -206,10 +207,10 @@ export default function MagazinPage({ auth, onNavigate }) {
           </div>
         ) : shopping.length === 0 ? (
           <div style={{ paddingTop: 60, textAlign: 'center' }}>
-            <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: 26, color: 'rgba(253,246,236,0.18)' }}>
+            <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: 26, color: 'rgba(255,255,255,0.75)' }}>
               Niciun produs adăugat ✦
             </p>
-            <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 9, color: 'rgba(253,246,236,0.12)', marginTop: 12, letterSpacing: '0.12em' }}>
+            <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 9, color: 'rgba(255,255,255,0.55)', marginTop: 12, letterSpacing: '0.12em' }}>
               FOLOSEȘTE CÂMPUL DE MAI SUS SAU SALVEAZĂ INGREDIENTE DINTR-O REȚETĂ
             </p>
           </div>
@@ -242,12 +243,18 @@ export default function MagazinPage({ auth, onNavigate }) {
                   style={{
                     flex: 1, fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic',
                     fontSize: 24, cursor: 'none',
-                    color: item.done ? 'rgba(253,246,236,0.2)' : '#FDF6EC',
+                    color: item.done ? 'rgba(255,255,255,0.22)' : '#FFFFFF',
                     textDecoration: item.done ? 'line-through' : 'none',
-                    textShadow: item.done ? 'none' : '0 1px 16px rgba(0,0,0,0.95), 0 2px 32px rgba(0,0,0,0.8)',
+                    textShadow: item.done ? 'none' : '0 0 16px rgba(255,255,255,1), 0 0 40px rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.5)',
                     transition: 'all 0.2s',
                   }}>
-                  {item.name}
+                  {item.name.match(/^(\d+) x (.*)/) ? (
+                    <>
+                      {item.name.match(/^(\d+) x (.*)/)[1]}
+                      <span style={{ fontSize: 14, opacity: 0.45, margin: '0 4px', fontFamily: 'Jost, sans-serif', fontStyle: 'normal', display: 'inline-block', transform: 'scale(0.55)', verticalAlign: 'middle' }}>x</span>
+                      {item.name.match(/^(\d+) x (.*)/)[2]}
+                    </>
+                  ) : item.name.replace(/(\d+)\s*[^\w\sșțăîâȘȚĂÎÂ]\s*/g, '$1 x ')}
                 </span>
 
 
@@ -255,14 +262,14 @@ export default function MagazinPage({ auth, onNavigate }) {
                 {/* Șterge */}
                 <button data-cursor onClick={() => deleteItem(item.id)} style={{
                   width: 28, height: 28, borderRadius: '50%', cursor: 'none',
-                  background: 'rgba(15,10,5,0.5)', backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(180,60,60,0.25)',
-                  color: 'rgba(220,100,100,0.45)', fontSize: 10,
+                  background: 'rgba(180,30,30,0.35)', backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(220,60,60,0.55)',
+                  color: 'rgba(255,100,100,0.9)', fontSize: 10,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.15s', flexShrink: 0,
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(180,40,40,0.45)'; e.currentTarget.style.color = '#FF9090'; e.currentTarget.style.borderColor = 'rgba(220,80,80,0.55)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(15,10,5,0.5)'; e.currentTarget.style.color = 'rgba(220,100,100,0.45)'; e.currentTarget.style.borderColor = 'rgba(180,60,60,0.25)' }}>
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,30,30,0.7)'; e.currentTarget.style.color = '#FF6060'; e.currentTarget.style.borderColor = 'rgba(255,80,80,0.8)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(180,30,30,0.35)'; e.currentTarget.style.color = 'rgba(255,100,100,0.9)'; e.currentTarget.style.borderColor = 'rgba(220,60,60,0.55)' }}>
                   <TrashIcon />
                 </button>
               </div>

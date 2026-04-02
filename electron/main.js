@@ -26,6 +26,8 @@ let splashWindow = null
 let tray = null
 let backendProc = null
 let isQuitting = false
+let backendRestartAttempts = 0
+const MAX_BACKEND_RESTARTS = 5
 
 // ─── AUTO-UPDATE ──────────────────────────────────────────────────────────────
 autoUpdater.autoDownload = false
@@ -128,13 +130,11 @@ function killAndInstall() {
 
   // Opreste backend Python fortat
   if (backendProc) {
-    try { backendProc.kill('SIGKILL') } catch (e) {}
+    try { backendProc.kill('SIGKILL') } catch (e) {
+      console.error('[Update] Eroare la oprirea procesului backend:', e.message)
+    }
     backendProc = null
   }
-
-  // Ucide fortat orice proces Python ramas
-  execCmd('taskkill /F /IM python.exe /T 2>nul', function () {})
-  execCmd('taskkill /F /IM python3.exe /T 2>nul', function () {})
 
   // Gaseste installer-ul descarcat in cache si ruleaza-l cu /S (silent)
   setTimeout(function () {
@@ -358,6 +358,7 @@ function startBackend() {
       var text = data.toString()
       console.log('[Backend stdout]', text.trim())
       if (text.includes('Application startup complete') || text.includes('Uvicorn running')) {
+        backendRestartAttempts = 0
         resolve()
       }
     })
@@ -377,6 +378,20 @@ function startBackend() {
 
     backendProc.on('exit', function (code) {
       console.log('[Backend] Proces iesit cu codul:', code)
+      backendProc = null
+      if (!isQuitting && backendRestartAttempts < MAX_BACKEND_RESTARTS) {
+        var delay = 2000 * Math.pow(2, backendRestartAttempts)
+        backendRestartAttempts++
+        console.log('[Backend] Repornesc in ' + delay + 'ms (incercarea ' + backendRestartAttempts + '/' + MAX_BACKEND_RESTARTS + ')')
+        setTimeout(function () {
+          startBackend().catch(function (e) {
+            console.error('[Backend] Nu am putut reporni:', e.message)
+          })
+        }, delay)
+      } else if (!isQuitting) {
+        console.error('[Backend] Nu am putut reporni dupa ' + MAX_BACKEND_RESTARTS + ' incercari.')
+        dialog.showErrorBox('Eroare', 'Backend-ul nu a putut fi repornit. Reporneste aplicatia manual.')
+      }
     })
 
     setTimeout(resolve, 10000)
@@ -419,10 +434,21 @@ app.on('activate', function () {
   else createMainWindow()
 })
 
-app.on('before-quit', function () {
-  isQuitting = true
+app.on('before-quit', async function (event) {
   if (backendProc) {
-    try { backendProc.kill() } catch (e) {}
+    event.preventDefault()
+    isQuitting = true
+    backendProc.kill('SIGTERM')
+    await new Promise(resolve => {
+      const timeout = setTimeout(() => {
+        if (backendProc) backendProc.kill('SIGKILL')
+        resolve()
+      }, 5000)
+      backendProc.once('close', () => { clearTimeout(timeout); resolve() })
+    })
+    app.quit()
+  } else {
+    isQuitting = true
   }
 })
 

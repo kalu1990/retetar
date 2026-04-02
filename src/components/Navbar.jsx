@@ -200,6 +200,7 @@ export default function Navbar({ activePage, onNavigate, auth, onLogout }) {
   const [showContrast, setShowContrast] = useState(false)
   const [appVersion, setAppVersion]     = useState('')
   const dropRef = useRef(null)
+  const notifRef = useRef(null)
   const isCreator = auth?.role === 'creator'
   const isOnline = useOnlineStatus()
 
@@ -241,6 +242,47 @@ export default function Navbar({ activePage, onNavigate, auth, onLogout }) {
 
   const initials = auth?.username ? auth.username[0].toUpperCase() : '?'
   const username = auth?.username || ''
+
+  // Auto-scan notifications
+  const [notifications, setNotifications] = useState([])
+  const [notifSince, setNotifSince] = useState(0)
+  const [showNotif, setShowNotif] = useState(false)
+  const [autoScanRunning, setAutoScanRunning] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const token = localStorage.getItem('auth_token') || ''
+  const isCreatorUser = auth?.role === 'creator'
+  const API = 'http://localhost:8000'
+
+  useEffect(() => {
+    if (!isCreatorUser) return
+    // Poll status + notificari la 15 secunde
+    const poll = async () => {
+      try {
+        const [statusRes, notifRes] = await Promise.all([
+          fetch(`${API}/api/suggestions/autoscan/status?token=${token}`).then(r => r.json()).catch(() => ({})),
+          fetch(`${API}/api/suggestions/notifications?token=${token}&since=${notifSince}`).then(r => r.json()).catch(() => ({ notifications: [], total: 0 })),
+        ])
+        setAutoScanRunning(statusRes.running || false)
+        if (notifRes.notifications?.length > 0) {
+          setNotifications(prev => [...prev, ...notifRes.notifications].slice(-50))
+          setNotifSince(notifRes.total)
+          setUnreadCount(c => c + notifRes.notifications.length)
+        }
+      } catch {}
+    }
+    if (!autoScanRunning) return
+    poll()
+    const interval = setInterval(poll, 15000)
+    return () => clearInterval(interval)
+  }, [isCreatorUser, token, notifSince, autoScanRunning])
+
+  const toggleAutoScan = async () => {
+    const endpoint = autoScanRunning ? 'stop' : 'start'
+    try {
+      await fetch(`${API}/api/suggestions/autoscan/${endpoint}?token=${token}`, { method: 'POST' })
+      setAutoScanRunning(!autoScanRunning)
+    } catch {}
+  }
 
   return (
     <>
@@ -297,6 +339,70 @@ export default function Navbar({ activePage, onNavigate, auth, onLogout }) {
             </button>
           ))}
         </div>
+
+        {/* Clopotel notificari - doar creator */}
+        {isCreatorUser && (
+          <div ref={notifRef} className="relative flex-shrink-0" onMouseLeave={() => setShowNotif(false)}>
+            <button data-cursor onClick={() => { setShowNotif(v => !v); setUnreadCount(0) }}
+              style={{
+                background: 'none', border: 'none', cursor: 'none',
+                position: 'relative', padding: '6px',
+              }}>
+              <span style={{ fontSize: 16 }}>🔔</span>
+              {autoScanRunning && unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: 0, right: 0,
+                  background: '#D4B87A', color: '#0C0904',
+                  borderRadius: '50%', width: 16, height: 16,
+                  fontSize: 9, fontFamily: 'Jost, sans-serif', fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {showNotif && (
+              <div style={{
+                position: 'absolute', top: '100%', right: 0,
+                paddingTop: 12,
+                width: 320, maxHeight: 412, overflowY: 'auto',
+                background: 'linear-gradient(160deg, rgba(28,20,10,0.97) 0%, rgba(12,9,4,0.98) 100%)',
+                border: '1px solid rgba(201,169,110,0.15)',
+                borderRadius: 16,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+                backdropFilter: 'blur(32px)',
+                zIndex: 200,
+              }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(253,246,236,0.05)' }}>
+                  <span style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: 16, color: '#D4B87A' }}>
+                    Notificări
+                  </span>
+                </div>
+                {!autoScanRunning ? (
+                  <div style={{ padding: '28px 18px', color: 'rgba(253,246,236,0.18)', fontFamily: 'Jost, sans-serif', fontSize: 11, textAlign: 'center' }} />
+                ) : notifications.length === 0 ? (
+                  <div style={{ padding: '20px 18px', color: 'rgba(253,246,236,0.2)', fontFamily: 'Jost, sans-serif', fontSize: 11, textAlign: 'center' }}>
+                    Se scanează... sugestiile apar aici
+                  </div>
+                ) : (
+                  <div>
+                    {[...notifications].reverse().map((n, i) => (
+                      <div key={i} style={{ padding: '10px 18px', borderBottom: '1px solid rgba(253,246,236,0.04)' }}>
+                        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: 13, color: 'rgba(253,246,236,0.8)', marginBottom: 3 }}>
+                          {n.title}
+                        </div>
+                        <div style={{ fontFamily: 'Jost, sans-serif', fontSize: 9, color: 'rgba(253,246,236,0.3)', letterSpacing: '0.1em' }}>
+                          {n.file} · {n.time}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* User dropdown */}
         <div ref={dropRef} className="relative flex-shrink-0">

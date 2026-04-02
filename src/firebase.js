@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -85,8 +85,26 @@ export async function publicaRetetaFirebase(reteta, imageFile = null) {
       created_at: serverTimestamp(),
     }
 
-    const docRef = await addDoc(collection(db, 'inspiratie'), data)
-    return { success: true, firebase_id: docRef.id }
+    // Caută dacă există deja un document cu local_id-ul acesta
+    const { where } = await import('firebase/firestore')
+    const existing = await getDocs(query(
+      collection(db, 'inspiratie'),
+      where('local_id', '==', reteta.id || '')
+    ))
+
+    if (!existing.empty) {
+      // Actualizează documentul existent
+      const existingDoc = existing.docs[0]
+      await updateDoc(doc(db, 'inspiratie', existingDoc.id), {
+        ...data,
+        created_at: existingDoc.data().created_at, // păstrează data originală
+      })
+      return { success: true, firebase_id: existingDoc.id }
+    } else {
+      // Creează document nou
+      const docRef = await addDoc(collection(db, 'inspiratie'), data)
+      return { success: true, firebase_id: docRef.id }
+    }
   } catch (e) {
     console.error('[Firebase] Eroare publicare reteta:', e)
     return { success: false, error: e.message }
@@ -160,6 +178,24 @@ export async function loadEroriFirestore(limitCount = 50) {
   }
 }
 
+// ─── PREZENTA UTILIZATORI ────────────────────────────────────────────────────
+export async function updatePrezentaFirebase(username, page) {
+  try {
+    await setDoc(doc(db, 'prezenta', username), {
+      username,
+      page,
+      last_seen: serverTimestamp(),
+    })
+  } catch (e) {}
+}
 
+export async function loadPrezentaFirebase() {
+  try {
+    const snap = await getDocs(collection(db, 'prezenta'))
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  } catch (e) {
+    return []
+  }
+}
 
 export default firebaseApp

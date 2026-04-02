@@ -16,6 +16,7 @@ import ProfilePage        from './pages/ProfilePage'
 
 import MagazinPage         from './pages/MagazinPage'
 import { initGlobalErrorTracking } from './hooks/useTelemetry'
+import { updatePrezentaFirebase } from './firebase'
 
 const PAGES = { hero: HeroPage, retete: RecipesPage, planner: PlannerPage, ai: AIPage, analytics: AnalyticsPage, pantry: PantryPage, magazin: MagazinPage, suggestii: SuggestiiPage, suggestii_retete: SuggestiiRetetePage, profil: ProfilePage }
 const API = 'http://localhost:8000'
@@ -35,12 +36,13 @@ export default function App() {
   // Heartbeat la fiecare 30 secunde cat timp e logat
   useEffect(() => {
     if (!auth) return
-    const sendHeartbeat = () => {
+   const sendHeartbeat = () => {
       fetch(`${API}/api/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event_type: 'user_heartbeat', page: page, data: { username: auth.username } })
       }).catch(() => {})
+      updatePrezentaFirebase(auth.username, page)
     }
     sendHeartbeat()
     const interval = setInterval(sendHeartbeat, 30000)

@@ -105,20 +105,44 @@ function SuggestionCard({ s, onApprove, onReject, onToggle, expanded }) {
             )}
 
             {/* Code diff */}
-            {s.suggested_code && (
-              <div>
-                <div className="text-[9px] tracking-[0.22em] mb-[6px]"
-                  style={{ color: 'rgba(253,246,236,0.2)', fontFamily: 'Jost, sans-serif' }}>SUGESTIE COD</div>
-                <pre className="text-[11px] p-[14px] rounded-[10px] overflow-x-auto leading-[1.6]"
-                  style={{
-                    background: 'rgba(0,0,0,0.3)',
-                    border: '1px solid rgba(253,246,236,0.06)',
-                    color: 'rgba(253,246,236,0.6)',
-                    fontFamily: "'Courier New', monospace",
-                    maxHeight: 200,
-                  }}>
-                  {s.suggested_code}
-                </pre>
+            {(s.old_code || s.suggested_code) && (
+              <div className="flex flex-col gap-[10px]">
+                {s.old_code && (
+                  <div>
+                    <div className="text-[9px] tracking-[0.22em] mb-[6px]"
+                      style={{ color: 'rgba(196,120,138,0.6)', fontFamily: 'Jost, sans-serif' }}>
+                      ✕ COD VECHI
+                    </div>
+                    <pre className="text-[11px] p-[14px] rounded-[10px] overflow-x-auto leading-[1.6]"
+                      style={{
+                        background: 'rgba(196,120,138,0.06)',
+                        border: '1px solid rgba(196,120,138,0.2)',
+                        color: 'rgba(196,120,138,0.7)',
+                        fontFamily: "'Courier New', monospace",
+                        maxHeight: 200,
+                      }}>
+                      {s.old_code}
+                    </pre>
+                  </div>
+                )}
+                {s.suggested_code && (
+                  <div>
+                    <div className="text-[9px] tracking-[0.22em] mb-[6px]"
+                      style={{ color: 'rgba(143,175,138,0.6)', fontFamily: 'Jost, sans-serif' }}>
+                      ✓ COD NOU
+                    </div>
+                    <pre className="text-[11px] p-[14px] rounded-[10px] overflow-x-auto leading-[1.6]"
+                      style={{
+                        background: 'rgba(143,175,138,0.06)',
+                        border: '1px solid rgba(143,175,138,0.2)',
+                        color: 'rgba(143,175,138,0.7)',
+                        fontFamily: "'Courier New', monospace",
+                        maxHeight: 200,
+                      }}>
+                      {s.suggested_code}
+                    </pre>
+                  </div>
+                )}
               </div>
             )}
 
@@ -193,14 +217,36 @@ export default function SuggestiiPage() {
   const [filter, setFilter] = useState('pending')
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [rateLimited, setRateLimited] = useState(false)
   const [expanded, setExpanded] = useState(null)
   const [feedback, setFeedback] = useState(null)
   const [stats, setStats] = useState(null)
+  const [autoScanRunning, setAutoScanRunning] = useState(false)
+
+  useEffect(() => {
+    fetch(`${API}/api/suggestions/autoscan/status?token=${token}`)
+      .then(r => r.json())
+      .then(d => setAutoScanRunning(d.running || false))
+      .catch(() => {})
+  }, [])
+
+  const toggleAutoScan = async () => {
+    const endpoint = autoScanRunning ? 'stop' : 'start'
+    try {
+      await fetch(`${API}/api/suggestions/autoscan/${endpoint}?token=${token}`, { method: 'POST' })
+      setAutoScanRunning(v => !v)
+      setFeedback({ type: 'info', msg: autoScanRunning ? '⏹ Auto-scan oprit' : '▶ Auto-scan pornit' })
+      setTimeout(() => setFeedback(null), 3000)
+    } catch {
+      setFeedback({ type: 'error', msg: 'Eroare la comutare auto-scan' })
+      setTimeout(() => setFeedback(null), 3000)
+    }
+  }
 
   const fetchSuggestions = async (status = filter) => {
     setLoading(true)
     try {
-      const res = await fetch(`${API}/api/suggestions?status=${status}`)
+      const res = await fetch(`${API}/api/suggestions?status=${status}&token=${token}`)
       const data = await res.json()
       setSuggestions(data)
     } catch {
@@ -212,7 +258,7 @@ export default function SuggestiiPage() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API}/api/suggestions/stats`)
+      const res = await fetch(`${API}/api/suggestions/stats?token=${token}`)
       if (res.ok) setStats(await res.json())
     } catch {}
   }
@@ -226,18 +272,48 @@ export default function SuggestiiPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ file_path: fileName, focus: 'general' })
       })
+      if (!res.ok) {
+        if (res.status === 429) {
+          const body = await res.json().catch(() => ({}))
+          const detail = body.detail || ''
+          const seconds = detail.startsWith('RATE_LIMIT:') ? parseInt(detail.split(':')[1]) : 60
+          let remaining = seconds
+          setRateLimited(true)
+          setFeedback({ type: 'error', msg: `⏳ Limită Gemini atinsă. Așteaptă ${remaining}s...` })
+          const countdown = setInterval(() => {
+            remaining -= 1
+            if (remaining <= 0) {
+              clearInterval(countdown)
+              setFeedback({ type: 'info', msg: '✅ Poți scana din nou în 10s...' })
+              setTimeout(() => {
+                setRateLimited(false)
+                setFeedback({ type: 'info', msg: '✅ Poți scana din nou!' })
+                setTimeout(() => setFeedback(null), 3000)
+              }, 10000)
+            } else {
+              setFeedback({ type: 'error', msg: `⏳ Limită Gemini atinsă. Așteaptă ${remaining}s...` })
+            }
+          }, 1000)
+        } else {
+          setFeedback({ type: 'error', msg: 'Eroare la scanare' })
+          setTimeout(() => setFeedback(null), 5000)
+        }
+        setScanning(false)
+        return
+      }
       const data = await res.json()
       if (data.suggestion) {
         setFeedback({ type: 'success', msg: `💡 Sugestie nouă: ${data.suggestion.title}` })
         setFilter('pending')
         fetchSuggestions('pending')
         fetchStats()
+        setTimeout(() => setFeedback(null), 5000)
       }
     } catch {
       setFeedback({ type: 'error', msg: 'Eroare la scanare' })
+      setTimeout(() => setFeedback(null), 5000)
     } finally {
       setScanning(false)
-      setTimeout(() => setFeedback(null), 5000)
     }
   }
 
@@ -248,7 +324,7 @@ export default function SuggestiiPage() {
 
   const handleApprove = async (id) => {
     try {
-      await fetch(`${API}/api/suggestions/${id}/approve`, { method: 'POST' })
+      await fetch(`${API}/api/suggestions/${id}/approve?token=${token}`, { method: 'POST' })
       setFeedback({ type: 'success', msg: 'Sugestie aprobată ✓' })
       fetchSuggestions()
       fetchStats()
@@ -260,7 +336,7 @@ export default function SuggestiiPage() {
 
   const handleReject = async (id) => {
     try {
-      await fetch(`${API}/api/suggestions/${id}/reject`, { method: 'POST' })
+      await fetch(`${API}/api/suggestions/${id}/reject?token=${token}`, { method: 'POST' })
       setFeedback({ type: 'info', msg: 'Sugestie respinsă' })
       fetchSuggestions()
       fetchStats()
@@ -340,15 +416,15 @@ export default function SuggestiiPage() {
           }}>
           ↻ Reîncarcă
         </button>
-        <button onClick={() => handleScan('retetar_api.py')} disabled={scanning} data-cursor
+        <button onClick={toggleAutoScan} data-cursor
           className="px-[18px] py-[8px] rounded-full text-[10px] tracking-[0.15em] cursor-none transition-all duration-200"
           style={{
-            background: scanning ? 'rgba(201,169,110,0.15)' : 'linear-gradient(135deg, rgba(201,169,110,0.2), rgba(201,169,110,0.08))',
-            border: '1px solid rgba(201,169,110,0.3)',
-            color: scanning ? 'rgba(201,169,110,0.5)' : '#C9A96E',
+            background: autoScanRunning ? 'rgba(196,120,138,0.15)' : 'linear-gradient(135deg, rgba(143,175,138,0.2), rgba(143,175,138,0.08))',
+            border: `1px solid ${autoScanRunning ? 'rgba(196,120,138,0.35)' : 'rgba(143,175,138,0.35)'}`,
+            color: autoScanRunning ? '#C4788A' : '#8FAF8A',
             fontFamily: 'Jost, sans-serif',
           }}>
-          {scanning ? '⏳ Analizez...' : '✦ Scanează cu AI'}
+          {autoScanRunning ? '⏹ OPREȘTE' : '▶ PORNEȘTE'}
         </button>
       </div>
 
